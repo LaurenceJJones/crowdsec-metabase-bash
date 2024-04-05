@@ -67,11 +67,8 @@ download "$YQ_DOWNLOAD_LINK" "$YQ_BINARY"
 chmod +x "$YQ_BINARY"
 
 yq_local() {
-    if [ -f "$2.local" ]; then
-        $YQ_BINARY e "$1" "$2.local"
-    fi
-    if [ $? -ne 0 ] || [ ! -f "$2.local" ]; then
-        $YQ_BINARY e "$1" "$2"
+    if [ -f "$2.local" ] && [[ ! $(YQ_BINARY e "$1" "$2.local") ]] || [ ! -f "$2.local" ]; then
+        $YQ_BINARY "$1" "$2"
     fi
 }
 
@@ -82,8 +79,8 @@ if [ ! -f "$CROWDSEC_CONFIG_FILE" ]; then
 fi
 
 if [ -z "$CROWDSEC_DATA_DIR" ]; then
-    CROWDSEC_DATA_DIR=$(yq_local '.config_paths.data_dir' "$CROWDSEC_CONFIG_FILE")
-    if [ $? -ne 0 ]; then
+    CROWDSEC_DATA_DIR=$(yq_local '.config_paths.data_dir' "$CROWDSEC_CONFIG_FILE") 
+    if [ -z "$CROWDSEC_DATA_DIR" ]; then
         echo "Error parsing the crowdsec config file. Please provide the correct path to the config file."
         clean_up_and_exit 1
     fi
