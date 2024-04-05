@@ -21,8 +21,8 @@ command_exists() {
 }
 
 clean_up_and_exit() {
-    rm -rf $DEPS_FOLDER
-    exit $1
+    rm -rf "$DEPS_FOLDER"
+    exit "$1"
 }
 
 ## Get arch anything other than amd64 is not supported
@@ -51,7 +51,7 @@ download() {
     fi
 
     if command -v curl >/dev/null; then
-        cd "${2%/*}" || (echo "Could not cd to ${1%/*}" && exit 1)
+        cd "${2%/*}" || (echo "Could not cd to ${2%/*}" && exit 1)
         # older versions of curl don't support --output-dir
         curl -sSLo "${2##*/}" --fail "$1"
         cd - >/dev/null || exit
@@ -63,15 +63,15 @@ download() {
     fi
 }
 
-download $YQ_DOWNLOAD_LINK $YQ_BINARY
-chmod +x $YQ_BINARY
+download "$YQ_DOWNLOAD_LINK" "$YQ_BINARY"
+chmod +x "$YQ_BINARY"
 
 yq_local() {
     if [ -f "$2.local" ]; then
         $YQ_BINARY e "$1" "$2.local"
     fi
     if [ $? -ne 0 ] || [ ! -f "$2.local" ]; then
-        $YQ_BINARY "$1" "$2"
+        $YQ_BINARY e "$1" "$2"
     fi
 }
 
@@ -82,7 +82,7 @@ if [ ! -f "$CROWDSEC_CONFIG_FILE" ]; then
 fi
 
 if [ -z "$CROWDSEC_DATA_DIR" ]; then
-    CROWDSEC_DATA_DIR=$(yq_local '.config_paths.data_dir' $CROWDSEC_CONFIG_FILE)
+    CROWDSEC_DATA_DIR=$(yq_local '.config_paths.data_dir' "$CROWDSEC_CONFIG_FILE")
     if [ $? -ne 0 ]; then
         echo "Error parsing the crowdsec config file. Please provide the correct path to the config file."
         clean_up_and_exit 1
@@ -90,7 +90,7 @@ if [ -z "$CROWDSEC_DATA_DIR" ]; then
 fi
 
 ## In some systems, groupadd is not installed, so we need to check for an alternative
-if ! command_exists $GROUPADD_CMD; then
+if ! command_exists "$GROUPADD_CMD"; then
     echo "groupadd is not installed"
     echo "Checking for alternative groupadd command..."
     GROUPADD_CMD="addgroup"
@@ -101,7 +101,7 @@ if ! command_exists $GROUPADD_CMD; then
 fi
 
 ## Check if docker or podman is installed
-if ! command_exists $CONTAINER_RUNTIME; then
+if ! command_exists "$CONTAINER_RUNTIME"; then
     echo "Docker is not installed"
     echo "Attempting to find podman...."
     CONTAINER_RUNTIME="podman"
@@ -113,12 +113,6 @@ fi
 
 ## Log the container runtime
 echo "Container runtime: $CONTAINER_RUNTIME"
-
-## Check if the user is root
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run as root"
-    clean_up_and_exit 1
-fi
 
 ## Case check the argument
 case $1 in
